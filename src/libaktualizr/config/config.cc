@@ -95,6 +95,7 @@ void UptaneConfig::updateFromPropertyTree(const boost::property_tree::ptree& pt)
   CopyFromConfig(force_install_completion, "force_install_completion", pt);
   CopyFromConfig(secondary_config_file, "secondary_config_file", pt);
   CopyFromConfig(secondary_preinstall_wait_sec, "secondary_preinstall_wait_sec", pt);
+  CopyFromConfig(offline_updates, "offline_updates", pt);
 }
 
 void UptaneConfig::writeToStream(std::ostream& out_stream) const {
@@ -106,6 +107,7 @@ void UptaneConfig::writeToStream(std::ostream& out_stream) const {
   writeOption(out_stream, force_install_completion, "force_install_completion");
   writeOption(out_stream, secondary_config_file, "secondary_config_file");
   writeOption(out_stream, secondary_preinstall_wait_sec, "secondary_preinstall_wait_sec");
+  writeOption(out_stream, offline_updates, "offline_updates");
 }
 
 /**

@@ -384,6 +384,9 @@ void SotaUptaneClient::initialize() {
   LOG_INFO << "Certificate valid from: " << not_before << " until: " << not_after;
 
   LOG_DEBUG << "... provisioned OK";
+  if (config.uptane.offline_updates) {
+    LOG_INFO << "Offline Updates are enabled.";
+  }
   finalizeAfterReboot();
 }
 
