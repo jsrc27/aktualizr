@@ -25,6 +25,15 @@ class IMetadataFetcher {
   virtual void fetchLatestRole(std::string* result, int64_t maxsize, RepositoryType repo,
                                const Uptane::Role& role) const = 0;
 
+  void fetchRoleOffline(std::string* result, std::string path, RepositoryType repo, const Uptane::Role& role,
+                        Version version) const;
+  void fetchLatestRoleOffline(std::string* result, std::string path, RepositoryType repo,
+                              const Uptane::Role& role) const {
+    fetchRoleOffline(result, path, repo, role, Version());
+  }
+  void fetchRoleFilename(std::string* result, std::string file_path, RepositoryType repo) const;
+  void fetchFile(std::string file, RepositoryType repo, std::string* result) const;
+
  protected:
   IMetadataFetcher() = default;
   IMetadataFetcher(IMetadataFetcher&&) = default;
