@@ -197,7 +197,7 @@ void ImageRepository::checkTargetsExpired() {
   }
 }
 
-void ImageRepository::updateMeta(INvStorage& storage, const IMetadataFetcher& fetcher) {
+void ImageRepository::updateMeta(INvStorage& storage, const IMetadataFetcher& fetcher, bool offline) {
   resetMeta();
 
   updateRoot(storage, fetcher, RepositoryType::Image());

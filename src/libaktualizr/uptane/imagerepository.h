@@ -31,7 +31,9 @@ class ImageRepository : public RepositoryCommon {
   int64_t getRoleSize(const Uptane::Role& role) const;
 
   void checkMetaOffline(INvStorage& storage);
-  void updateMeta(INvStorage& storage, const IMetadataFetcher& fetcher) override;
+  void updateMeta(INvStorage& storage, const IMetadataFetcher& fetcher, bool offline) override;
+
+  std::string image_offline_metadata = "/media/well-known/metadata/image";
 
  private:
   void checkTimestampExpired();

@@ -77,7 +77,7 @@ data::InstallationResult AktualizrSecondary::doFullVerification(const Metadata& 
   // 4. NOT SUPPORTED: Download and check the Snapshot metadata file from the Director repository.
   // 5. Download and check the Targets metadata file from the Director repository.
   try {
-    director_repo_.updateMeta(*storage_, metadata);
+    director_repo_.updateMeta(*storage_, metadata, false);
   } catch (const std::exception& e) {
     LOG_ERROR << "Failed to update Director metadata: " << e.what();
     return data::InstallationResult(data::ResultCode::Numeric::kVerificationFailed,
@@ -89,7 +89,7 @@ data::InstallationResult AktualizrSecondary::doFullVerification(const Metadata& 
   // 8. Download and check the Snapshot metadata file from the Image repository.
   // 9. Download and check the top-level Targets metadata file from the Image repository.
   try {
-    image_repo_.updateMeta(*storage_, metadata);
+    image_repo_.updateMeta(*storage_, metadata, false);
   } catch (const std::exception& e) {
     LOG_ERROR << "Failed to update Image repo metadata: " << e.what();
     return data::InstallationResult(data::ResultCode::Numeric::kVerificationFailed,

@@ -15,7 +15,7 @@ class RepositoryCommon {
   void verifyRoot(const std::string &root_raw);
   int rootVersion() { return root.version(); }
   bool rootExpired() { return root.isExpired(TimeStamp::Now()); }
-  virtual void updateMeta(INvStorage &storage, const IMetadataFetcher &fetcher) = 0;
+  virtual void updateMeta(INvStorage &storage, const IMetadataFetcher &fetcher, bool offline) = 0;
 
  protected:
   void resetRoot();

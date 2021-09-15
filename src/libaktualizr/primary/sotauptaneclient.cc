@@ -392,7 +392,7 @@ void SotaUptaneClient::initialize() {
 
 void SotaUptaneClient::updateDirectorMeta() {
   try {
-    director_repo.updateMeta(*storage, *uptane_fetcher);
+    director_repo.updateMeta(*storage, *uptane_fetcher, config.uptane.offline_updates);
   } catch (const std::exception &e) {
     LOG_ERROR << "Director metadata update failed: " << e.what();
     throw;
@@ -401,7 +401,7 @@ void SotaUptaneClient::updateDirectorMeta() {
 
 void SotaUptaneClient::updateImageMeta() {
   try {
-    image_repo.updateMeta(*storage, *uptane_fetcher);
+    image_repo.updateMeta(*storage, *uptane_fetcher, config.uptane.offline_updates);
   } catch (const std::exception &e) {
     LOG_ERROR << "Failed to update Image repo metadata: " << e.what();
     throw;

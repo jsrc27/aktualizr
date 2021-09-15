@@ -24,8 +24,10 @@ class DirectorRepository : public RepositoryCommon {
   void checkMetaOffline(INvStorage& storage);
   void dropTargets(INvStorage& storage);
 
-  void updateMeta(INvStorage& storage, const IMetadataFetcher& fetcher) override;
+  void updateMeta(INvStorage& storage, const IMetadataFetcher& fetcher, bool offline) override;
   bool matchTargetsWithImageTargets(const Uptane::Targets& image_targets) const;
+
+  std::string director_offline_metadata = "/media/well-known/metadata/director";
 
  private:
   void resetMeta();

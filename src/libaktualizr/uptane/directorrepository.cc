@@ -87,7 +87,7 @@ void DirectorRepository::checkMetaOffline(INvStorage& storage) {
   }
 }
 
-void DirectorRepository::updateMeta(INvStorage& storage, const IMetadataFetcher& fetcher) {
+void DirectorRepository::updateMeta(INvStorage& storage, const IMetadataFetcher& fetcher, bool offline) {
   // Uptane step 2 (download time) is not implemented yet.
   // Uptane step 3 (download metadata)
 
