@@ -19,7 +19,7 @@ class RepositoryCommon {
 
  protected:
   void resetRoot();
-  void updateRoot(INvStorage &storage, const IMetadataFetcher &fetcher, RepositoryType repo_type);
+  void updateRoot(INvStorage &storage, const IMetadataFetcher &fetcher, RepositoryType repo_type, bool offline, std::string path);
 
   static const int64_t kMaxRotations = 1000;
 

@@ -58,14 +58,18 @@ void RepositoryCommon::verifyRoot(const std::string& root_raw) {
 void RepositoryCommon::resetRoot() { root = Root(Root::Policy::kAcceptAll); }
 
 void RepositoryCommon::updateRoot(INvStorage& storage, const IMetadataFetcher& fetcher,
-                                  const RepositoryType repo_type) {
+                                  const RepositoryType repo_type, bool offline, std::string path) {
   // 5.4.4.3.1. Load the previous Root metadata file.
   {
     std::string root_raw;
     if (storage.loadLatestRoot(&root_raw, repo_type)) {
       initRoot(repo_type, root_raw);
     } else {
-      fetcher.fetchRole(&root_raw, kMaxRootSize, repo_type, Role::Root(), Version(1));
+      if (offline) {
+        fetcher.fetchRoleOffline(&root_raw, path, repo_type, Role::Root(), Version(1));
+      } else {
+        fetcher.fetchRole(&root_raw, kMaxRootSize, repo_type, Role::Root(), Version(1));
+      }
       initRoot(repo_type, root_raw);
       storage.storeRoot(root_raw, repo_type, Version(1));
     }
@@ -76,7 +80,11 @@ void RepositoryCommon::updateRoot(INvStorage& storage, const IMetadataFetcher& f
     // 5.4.4.3.2.2. Try downloading a new version N+1 of the Root metadata file.
     std::string root_raw;
     try {
-      fetcher.fetchRole(&root_raw, kMaxRootSize, repo_type, Role::Root(), Version(version));
+      if (offline) {
+        fetcher.fetchRoleOffline(&root_raw, path, repo_type, Role::Root(), Version(version));
+      } else {
+        fetcher.fetchRole(&root_raw, kMaxRootSize, repo_type, Role::Root(), Version(version));
+      }
     } catch (const std::exception& e) {
       break;
     }

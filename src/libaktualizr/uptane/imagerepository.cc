@@ -200,7 +200,7 @@ void ImageRepository::checkTargetsExpired() {
 void ImageRepository::updateMeta(INvStorage& storage, const IMetadataFetcher& fetcher, bool offline) {
   resetMeta();
 
-  updateRoot(storage, fetcher, RepositoryType::Image());
+  updateRoot(storage, fetcher, RepositoryType::Image(), offline, image_offline_metadata);
 
   // Update Image repo Timestamp metadata
   {

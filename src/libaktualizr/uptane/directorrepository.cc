@@ -94,7 +94,7 @@ void DirectorRepository::updateMeta(INvStorage& storage, const IMetadataFetcher&
   // reset Director repo to initial state before starting Uptane iteration
   resetMeta();
 
-  updateRoot(storage, fetcher, RepositoryType::Director());
+  updateRoot(storage, fetcher, RepositoryType::Director(), offline, director_offline_metadata);
 
   // Not supported: 3. Download and check the Timestamp metadata file from the Director repository, following the
   // procedure in Section 5.4.4.4. Not supported: 4. Download and check the Snapshot metadata file from the Director
