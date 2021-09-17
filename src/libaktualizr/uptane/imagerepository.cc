@@ -281,7 +281,31 @@ void ImageRepository::updateMeta(INvStorage& storage, const IMetadataFetcher& fe
   }
 
   // Update Image repo Targets metadata
-  {
+  if (offline) {
+    // Load top-level Targets metadata from well-known location
+    // Then compare with existing target version
+    std::string image_offline_target;
+    fetcher.fetchLatestRoleOffline(&image_offline_target, image_offline_metadata, RepositoryType::Image(), Role::Targets());
+
+    const int fetched_version = extractVersionUntrusted(image_offline_target);
+    int local_version;
+    std::string image_target_stored;
+    if (storage.loadNonRoot(&image_target_stored, RepositoryType::Image(), Role::Targets())) {
+      local_version = extractVersionUntrusted(image_target_stored);
+    } else {
+      local_version = -1;
+    }
+
+    if (local_version < fetched_version) {
+      // If new Target is more recent then verify and load it into storage
+      verifyTargets(image_offline_target, false);
+      storage.storeNonRoot(image_offline_target, RepositoryType::Image(), Role::Targets());
+    } else {
+      verifyTargets(image_target_stored, false);
+    }
+
+    checkTargetsExpired();
+  } else {
     // First check if we already have the latest version according to the
     // Snapshot metadata.
     bool fetch_targets = true;
