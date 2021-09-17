@@ -38,7 +38,7 @@ void ImageRepository::fetchSnapshot(INvStorage& storage, const IMetadataFetcher&
   // See also https://github.com/uptane/deployment-considerations/pull/39/files.
   // If the Snapshot is rotated, delegations may be safely removed.
   // https://saeljira.it.here.com/browse/OTA-4121
-  verifySnapshot(image_snapshot, false);
+  verifySnapshot(image_snapshot, false, false);
 
   if (local_version > remote_version) {
     throw Uptane::SecurityException(RepositoryType::IMAGE, "Rollback attempt");
@@ -47,37 +47,43 @@ void ImageRepository::fetchSnapshot(INvStorage& storage, const IMetadataFetcher&
   }
 }
 
-void ImageRepository::verifySnapshot(const std::string& snapshot_raw, bool prefetch) {
-  const std::string canonical = Utils::jsonToCanonicalStr(Utils::parseJSON(snapshot_raw));
-  bool hash_exists = false;
-  for (const auto& it : timestamp.snapshot_hashes()) {
-    switch (it.type()) {
-      case Hash::Type::kSha256:
-        if (Hash(Hash::Type::kSha256, boost::algorithm::hex(Crypto::sha256digest(canonical))) != it) {
-          if (!prefetch) {
-            LOG_ERROR << "Hash verification for Snapshot metadata failed";
+void ImageRepository::verifySnapshot(const std::string& snapshot_raw, bool prefetch, bool offline) {
+  if (offline) {
+    const std::string canonical = Utils::jsonToCanonicalStr(Utils::parseJSON(snapshot_raw));
+    bool hash_exists = false;
+    for (const auto& it : timestamp.snapshot_hashes()) {
+      switch (it.type()) {
+        case Hash::Type::kSha256:
+          if (Hash(Hash::Type::kSha256, boost::algorithm::hex(Crypto::sha256digest(canonical))) != it) {
+            if (!prefetch) {
+              LOG_ERROR << "Hash verification for Snapshot metadata failed";
+            }
+            throw Uptane::SecurityException(RepositoryType::IMAGE, "Snapshot metadata hash verification failed");
           }
-          throw Uptane::SecurityException(RepositoryType::IMAGE, "Snapshot metadata hash verification failed");
-        }
-        hash_exists = true;
-        break;
-      case Hash::Type::kSha512:
-        if (Hash(Hash::Type::kSha512, boost::algorithm::hex(Crypto::sha512digest(canonical))) != it) {
-          if (!prefetch) {
-            LOG_ERROR << "Hash verification for Snapshot metadata failed";
+          hash_exists = true;
+          break;
+        case Hash::Type::kSha512:
+          if (Hash(Hash::Type::kSha512, boost::algorithm::hex(Crypto::sha512digest(canonical))) != it) {
+            if (!prefetch) {
+              LOG_ERROR << "Hash verification for Snapshot metadata failed";
+            }
+            throw Uptane::SecurityException(RepositoryType::IMAGE, "Snapshot metadata hash verification failed");
           }
-          throw Uptane::SecurityException(RepositoryType::IMAGE, "Snapshot metadata hash verification failed");
-        }
-        hash_exists = true;
-        break;
-      default:
-        break;
+          hash_exists = true;
+          break;
+        default:
+          break;
+      }
     }
-  }
 
-  if (!hash_exists) {
-    LOG_ERROR << "No hash found for shapshot.json";
-    throw Uptane::SecurityException(RepositoryType::IMAGE, "Snapshot metadata hash verification failed");
+    if (!hash_exists) {
+      LOG_ERROR << "No hash found for shapshot.json";
+      throw Uptane::SecurityException(RepositoryType::IMAGE, "Snapshot metadata hash verification failed");
+    }
+
+    if (snapshot.version() != timestamp.snapshot_version()) {
+      throw Uptane::VersionMismatch(RepositoryType::IMAGE, Uptane::Role::SNAPSHOT);
+    }
   }
 
   try {
@@ -86,10 +92,6 @@ void ImageRepository::verifySnapshot(const std::string& snapshot_raw, bool prefe
   } catch (const Exception& e) {
     LOG_ERROR << "Signature verification for Snapshot metadata failed";
     throw;
-  }
-
-  if (snapshot.version() != timestamp.snapshot_version()) {
-    throw Uptane::VersionMismatch(RepositoryType::IMAGE, Uptane::Role::SNAPSHOT);
   }
 }
 
@@ -203,7 +205,7 @@ void ImageRepository::updateMeta(INvStorage& storage, const IMetadataFetcher& fe
   updateRoot(storage, fetcher, RepositoryType::Image(), offline, image_offline_metadata);
 
   // Update Image repo Timestamp metadata
-  {
+  if (!offline) {
     std::string image_timestamp;
 
     fetcher.fetchLatestRole(&image_timestamp, kMaxTimestampSize, RepositoryType::Image(), Role::Timestamp());
@@ -229,7 +231,29 @@ void ImageRepository::updateMeta(INvStorage& storage, const IMetadataFetcher& fe
   }
 
   // Update Image repo Snapshot metadata
-  {
+  if (offline) {
+    // Load Snapshot metadata from well-known location
+    // Then compare with existing snapshot version
+    std::string image_offline_snapshot;
+    fetcher.fetchLatestRoleOffline(&image_offline_snapshot, image_offline_metadata, RepositoryType::Image(), Role::Snapshot());
+
+    const int fetched_version = extractVersionUntrusted(image_offline_snapshot);
+    int local_version;
+    std::string image_snapshot_stored;
+    if (storage.loadNonRoot(&image_snapshot_stored, RepositoryType::Image(), Role::Snapshot())) {
+      local_version = extractVersionUntrusted(image_snapshot_stored);
+    } else {
+      local_version = -1;
+    }
+
+    if (local_version < fetched_version) {
+      // If new Snapshot is more recent then verify and load it into storage
+      verifySnapshot(image_offline_snapshot, false, offline);
+      storage.storeNonRoot(image_offline_snapshot, RepositoryType::Image(), Role::Snapshot());
+    } else {
+      verifySnapshot(image_snapshot_stored, false, offline);
+    }
+  } else {
     // First check if we already have the latest version according to the
     // Timestamp metadata.
     bool fetch_snapshot = true;
@@ -237,7 +261,7 @@ void ImageRepository::updateMeta(INvStorage& storage, const IMetadataFetcher& fe
     std::string image_snapshot_stored;
     if (storage.loadNonRoot(&image_snapshot_stored, RepositoryType::Image(), Role::Snapshot())) {
       try {
-        verifySnapshot(image_snapshot_stored, true);
+        verifySnapshot(image_snapshot_stored, true, false);
         fetch_snapshot = false;
         LOG_DEBUG << "Skipping Image repo Snapshot download; stored version is still current.";
       } catch (const Uptane::Exception& e) {
@@ -321,7 +345,7 @@ void ImageRepository::checkMetaOffline(INvStorage& storage) {
       throw Uptane::SecurityException(RepositoryType::IMAGE, "Could not load Snapshot role");
     }
 
-    verifySnapshot(image_snapshot, false);
+    verifySnapshot(image_snapshot, false, false);
 
     checkSnapshotExpired();
   }

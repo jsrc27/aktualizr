@@ -20,7 +20,7 @@ class ImageRepository : public RepositoryCommon {
 
   void verifyTimestamp(const std::string& timestamp_raw);
 
-  void verifySnapshot(const std::string& snapshot_raw, bool prefetch);
+  void verifySnapshot(const std::string& snapshot_raw, bool prefetch, bool offline);
 
   static std::shared_ptr<Uptane::Targets> verifyDelegation(const std::string& delegation_raw, const Uptane::Role& role,
                                                            const Targets& parent_target);
