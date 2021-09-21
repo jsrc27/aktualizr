@@ -601,7 +601,7 @@ std::unique_ptr<Uptane::Target> SotaUptaneClient::findTargetHelper(const Uptane:
     // Target name matches one of the patterns
 
     auto delegation =
-        Uptane::getTrustedDelegation(delegate_role, cur_targets, image_repo, *storage, *uptane_fetcher, offline);
+        Uptane::getTrustedDelegation(delegate_role, cur_targets, image_repo, *storage, *uptane_fetcher, offline, config.uptane.offline_updates);
     if (delegation.isExpired(TimeStamp::Now())) {
       continue;
     }

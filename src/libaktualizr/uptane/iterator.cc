@@ -4,15 +4,24 @@ namespace Uptane {
 
 Targets getTrustedDelegation(const Role &delegate_role, const Targets &parent_targets,
                              const ImageRepository &image_repo, INvStorage &storage, Fetcher &fetcher,
-                             const bool offline) {
+                             const bool offline, const bool offline_update) {
   std::string delegation_meta;
   auto version_in_snapshot = image_repo.getRoleVersion(delegate_role);
+  std::string delegation_offline_metadata = "/media/well-known/metadata/image";
 
   if (storage.loadDelegation(&delegation_meta, delegate_role)) {
     auto version = extractVersionUntrusted(delegation_meta);
 
     if (version > version_in_snapshot) {
-      throw SecurityException("image", "Rollback attempt on delegated targets");
+      if (offline_update) {
+        auto delegation = ImageRepository::verifyDelegation(delegation_meta, delegate_role, parent_targets);
+        if (delegation == nullptr) {
+          throw SecurityException("image", "Delegation verification failed");
+        }
+        return *delegation;
+      } else {
+        throw SecurityException("image", "Rollback attempt on delegated targets");
+      }
     } else if (version < version_in_snapshot) {
       delegation_meta.clear();
       storage.deleteDelegation(delegate_role);
@@ -26,7 +35,11 @@ Targets getTrustedDelegation(const Role &delegate_role, const Targets &parent_ta
       throw Uptane::DelegationMissing(delegate_role.ToString());
     }
     try {
-      fetcher.fetchLatestRole(&delegation_meta, Uptane::kMaxImageTargetsSize, RepositoryType::Image(), delegate_role);
+      if (offline_update) {
+        fetcher.fetchLatestRoleOffline(&delegation_meta, delegation_offline_metadata, RepositoryType::Image(), delegate_role);
+      } else {
+        fetcher.fetchLatestRole(&delegation_meta, Uptane::kMaxImageTargetsSize, RepositoryType::Image(), delegate_role);
+      }
     } catch (const std::exception &e) {
       LOG_ERROR << "Fetch role error: " << e.what();
       throw Uptane::DelegationMissing(delegate_role.ToString());
@@ -87,10 +100,10 @@ void LazyTargetsList::DelegationIterator::renewTargetsData() {
 
       auto fetched_role = Role(parent_targets->delegated_role_names_[idx], true);
       parent_targets = std::make_shared<const Targets>(
-          getTrustedDelegation(fetched_role, *parent_targets, repo_, *storage_, *fetcher_, false));
+          getTrustedDelegation(fetched_role, *parent_targets, repo_, *storage_, *fetcher_, false, false));
     }
     cur_targets_ =
-        std::make_shared<Targets>(getTrustedDelegation(role, *parent_targets, repo_, *storage_, *fetcher_, false));
+        std::make_shared<Targets>(getTrustedDelegation(role, *parent_targets, repo_, *storage_, *fetcher_, false, false));
   }
 }
 
