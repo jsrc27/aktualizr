@@ -438,8 +438,9 @@ void Uptane::Snapshot::init(const Json::Value &json) {
 
 Uptane::Snapshot::Snapshot(const Json::Value &json) : BaseMeta(json) { init(json); }
 
-Uptane::Snapshot::Snapshot(RepositoryType repo, const Json::Value &json, const std::shared_ptr<MetaWithKeys> &signer)
-    : BaseMeta(repo, Role::Snapshot(), json, signer) {
+Uptane::Snapshot::Snapshot(RepositoryType repo, const Role &role,
+                           const Json::Value &json, const std::shared_ptr<MetaWithKeys> &signer)
+    : BaseMeta(repo, role, json, signer) {
   init(json);
 }
 
