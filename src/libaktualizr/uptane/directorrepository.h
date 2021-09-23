@@ -27,6 +27,8 @@ class DirectorRepository : public RepositoryCommon {
   void updateMeta(INvStorage& storage, const IMetadataFetcher& fetcher, bool offline) override;
   bool matchTargetsWithImageTargets(const Uptane::Targets& image_targets) const;
 
+  void verifyOfflineSnapshot(const std::string& snapshot_raw_new, const std::string& snapshot_raw_old);
+
   std::string director_offline_metadata = "/media/well-known/metadata/director";
 
  private:
@@ -34,6 +36,7 @@ class DirectorRepository : public RepositoryCommon {
   void checkTargetsExpired();
   void targetsSanityCheck();
   bool usePreviousTargets() const;
+  void checkOfflineSnapshotExpired();
 
  private:
   FRIEND_TEST(Director, EmptyTargets);
@@ -42,6 +45,7 @@ class DirectorRepository : public RepositoryCommon {
   // checking expiration but the most recent non-empty list for everything else.
   Uptane::Targets targets;         // Only empty if we've never received non-empty targets.
   Uptane::Targets latest_targets;  // Can be an empty list.
+  Uptane::Snapshot snapshot;
 };
 
 }  // namespace Uptane

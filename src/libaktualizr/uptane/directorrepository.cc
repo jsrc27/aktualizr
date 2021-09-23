@@ -6,6 +6,37 @@ void DirectorRepository::resetMeta() {
   resetRoot();
   targets = Targets();
   latest_targets = Targets();
+  snapshot = Snapshot();
+}
+
+void DirectorRepository::verifyOfflineSnapshot(const std::string& snapshot_raw_new, const std::string& snapshot_raw_old) {
+  try {
+    // Verify the signature:
+    snapshot = Snapshot(RepositoryType::Image(), Uptane::Role::OfflineSnapshot(), Utils::parseJSON(snapshot_raw_new), std::make_shared<MetaWithKeys>(root));
+  } catch (const Exception& e) {
+    LOG_ERROR << "Signature verification for Offline Snapshot metadata failed";
+    throw;
+  }
+
+  Json::Value target_list_new = Utils::parseJSON(snapshot_raw_new)["signed"]["meta"];
+  Json::Value target_list_old = Utils::parseJSON(snapshot_raw_old)["signed"]["meta"];
+  for (auto next = target_list_new.begin(); next != target_list_new.end(); ++next) {
+    Json::Value target_new = next.key();
+    for (auto old = target_list_old.begin(); old != target_list_new.end(); ++old) {
+      Json::Value target_old = old.key();
+      if (target_new.asString() == target_old.asString()) {
+        if (target_old["version"].asInt() > target_new["version"].asInt()) {
+          throw Uptane::SecurityException(RepositoryType::DIRECTOR, "Rollback attempt");
+        }
+      }
+    }
+  }
+}
+
+void DirectorRepository::checkOfflineSnapshotExpired() {
+  if (snapshot.isExpired(TimeStamp::Now())) {
+    throw Uptane::ExpiredMetadata(type.toString(), Role::SNAPSHOT);
+  }
 }
 
 void DirectorRepository::checkTargetsExpired() {
@@ -99,6 +130,33 @@ void DirectorRepository::updateMeta(INvStorage& storage, const IMetadataFetcher&
   // Not supported: 3. Download and check the Timestamp metadata file from the Director repository, following the
   // procedure in Section 5.4.4.4. Not supported: 4. Download and check the Snapshot metadata file from the Director
   // repository, following the procedure in Section 5.4.4.5.
+
+  // Update Director Offline Snapshot Metadata
+  if (offline) {
+    // Load Offline Snapshot metadata from well-known location
+    // Then compare with existing offline snapshot version
+    std::string director_offline_snapshot;
+    fetcher.fetchLatestRoleOffline(&director_offline_snapshot, director_offline_metadata, RepositoryType::Director(), Role::OfflineSnapshot());
+
+    const int fetched_version = extractVersionUntrusted(director_offline_snapshot);
+    int local_version;
+    std::string director_snapshot_stored;
+    if (storage.loadNonRoot(&director_snapshot_stored, RepositoryType::Director(), Role::OfflineSnapshot())) {
+      local_version = extractVersionUntrusted(director_snapshot_stored);
+    } else {
+      local_version = -1;
+    }
+
+    if (local_version < fetched_version) {
+      // If new Snapshot is more recent then verify and load it into storage
+      verifyOfflineSnapshot(director_offline_snapshot, director_snapshot_stored);
+      storage.storeNonRoot(director_offline_snapshot, RepositoryType::Director(), Role::OfflineSnapshot());
+    } else {
+      verifyOfflineSnapshot(director_snapshot_stored, director_snapshot_stored);
+    }
+
+    checkOfflineSnapshotExpired();
+  }
 
   // Update Director Targets Metadata
   {
