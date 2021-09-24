@@ -72,13 +72,23 @@ bool DirectorRepository::usePreviousTargets() const {
   return !targets.targets.empty() && latest_targets.targets.empty();
 }
 
-void DirectorRepository::verifyTargets(const std::string& targets_raw) {
+void DirectorRepository::verifyTargets(const std::string& targets_raw, bool offline) {
   try {
     // Verify the signature:
-    latest_targets = Targets(RepositoryType::Director(), Role::Targets(), Utils::parseJSON(targets_raw),
-                             std::make_shared<MetaWithKeys>(root));
+    std::shared_ptr<Uptane::Targets> targets_offline_ptr;
+    if (offline) {
+      latest_targets = Targets(RepositoryType::Director(), Role::OfflineTargets(), Utils::parseJSON(targets_raw),
+                               std::make_shared<MetaWithKeys>(root));
+      targets_offline_ptr = std::make_shared<Uptane::Targets>(latest_targets);
+    } else {
+      latest_targets = Targets(RepositoryType::Director(), Role::Targets(), Utils::parseJSON(targets_raw),
+                               std::make_shared<MetaWithKeys>(root));
+    }
     if (!usePreviousTargets()) {
       targets = latest_targets;
+    }
+    if (targets_offline_ptr->version() != snapshot.role_version(Uptane::Role::OfflineTargets()) && offline) {
+      throw Uptane::VersionMismatch(RepositoryType::DIRECTOR, Uptane::Role::OFFLINETARGETS);
     }
   } catch (const Uptane::Exception& e) {
     LOG_ERROR << "Signature verification for Director Targets metadata failed";
@@ -110,7 +120,7 @@ void DirectorRepository::checkMetaOffline(INvStorage& storage) {
       throw Uptane::SecurityException(RepositoryType::DIRECTOR, "Could not load Targets role");
     }
 
-    verifyTargets(director_targets);
+    verifyTargets(director_targets, false);
 
     checkTargetsExpired();
 
@@ -158,8 +168,33 @@ void DirectorRepository::updateMeta(INvStorage& storage, const IMetadataFetcher&
     checkOfflineSnapshotExpired();
   }
 
-  // Update Director Targets Metadata
-  {
+  // Update Director Targets/Offline Targets Metadata
+  if (offline) {
+    // Get list of potential offline targets metadata filenames from offline snapshot
+    std::string offline_snapshot;
+    storage.loadNonRoot(&offline_snapshot, RepositoryType::Director(), Role::OfflineSnapshot());
+    Json::Value targets_list = Utils::parseJSON(offline_snapshot)["signed"]["meta"];
+    std::string target_file;
+    for (auto target = targets_list.begin(); target != targets_list.end(); ++target) {
+      std::string filename = target.key().asString();
+      if (access(filename.c_str(), R_OK) == 0) {
+        target_file = director_offline_metadata + filename;
+      }
+    }
+
+    if (target_file.size() == 0) {
+      throw Uptane::SecurityException(RepositoryType::DIRECTOR, "Could not find any valid offline targets metadata file");
+    }
+
+    std::string offline_targets;
+    fetcher.fetchRoleFilename(&offline_targets, target_file, RepositoryType::Director());
+    verifyTargets(offline_targets, offline);
+    storage.storeNonRoot(offline_targets, RepositoryType::Director(), Role::OfflineTargets());
+
+    checkTargetsExpired();
+
+    targetsSanityCheck();
+  } else {
     std::string director_targets;
 
     fetcher.fetchLatestRole(&director_targets, kMaxDirectorTargetsSize, RepositoryType::Director(), Role::Targets());
@@ -170,7 +205,7 @@ void DirectorRepository::updateMeta(INvStorage& storage, const IMetadataFetcher&
     if (storage.loadNonRoot(&director_targets_stored, RepositoryType::Director(), Role::Targets())) {
       local_version = extractVersionUntrusted(director_targets_stored);
       try {
-        verifyTargets(director_targets_stored);
+        verifyTargets(director_targets_stored, offline);
       } catch (const std::exception& e) {
         LOG_WARNING << "Unable to verify stored Director Targets metadata.";
       }
@@ -178,7 +213,7 @@ void DirectorRepository::updateMeta(INvStorage& storage, const IMetadataFetcher&
       local_version = -1;
     }
 
-    verifyTargets(director_targets);
+    verifyTargets(director_targets, offline);
 
     // TODO(OTA-4940): check if versions are equal but content is different. In
     // that case, the member variable targets is updated, but it isn't stored in

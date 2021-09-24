@@ -14,7 +14,7 @@ class DirectorRepository : public RepositoryCommon {
  public:
   DirectorRepository() : RepositoryCommon(RepositoryType::Director()) {}
 
-  void verifyTargets(const std::string& targets_raw);
+  void verifyTargets(const std::string& targets_raw, bool offline);
   const Targets& getTargets() const { return targets; }
   std::vector<Uptane::Target> getTargets(const Uptane::EcuSerial& ecu_id,
                                          const Uptane::HardwareIdentifier& hw_id) const {
