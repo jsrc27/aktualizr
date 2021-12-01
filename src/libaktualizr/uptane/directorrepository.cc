@@ -43,7 +43,7 @@ void DirectorRepository::checkOfflineSnapshotExpired() {
 
 void DirectorRepository::checkTargetsExpired() {
   if (latest_targets.isExpired(TimeStamp::Now())) {
-    throw Uptane::ExpiredMetadata(type.toString(), Role::TARGETS);
+    throw Uptane::ExpiredMetadata(type.ToString(), Role::TARGETS);
   }
 }
 
@@ -51,7 +51,7 @@ void DirectorRepository::targetsSanityCheck() {
   //  5.4.4.6.6. If checking Targets metadata from the Director repository,
   //  verify that there are no delegations.
   if (!latest_targets.delegated_role_names_.empty()) {
-    throw Uptane::InvalidMetadata(type.toString(), Role::TARGETS, "Found unexpected delegation.");
+    throw Uptane::InvalidMetadata(type.ToString(), Role::TARGETS, "Found unexpected delegation.");
   }
   //  5.4.4.6.7. If checking Targets metadata from the Director repository,
   //  check that no ECU identifier is represented more than once.
@@ -62,7 +62,7 @@ void DirectorRepository::targetsSanityCheck() {
         ecu_ids.insert(ecu.first);
       } else {
         LOG_ERROR << "ECU " << ecu.first << " appears twice in Director's Targets";
-        throw Uptane::InvalidMetadata(type.toString(), Role::TARGETS, "Found repeated ECU ID.");
+        throw Uptane::InvalidMetadata(type.ToString(), Role::TARGETS, "Found repeated ECU ID.");
       }
     }
   }

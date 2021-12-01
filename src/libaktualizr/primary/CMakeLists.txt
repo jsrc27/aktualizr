@@ -23,7 +23,6 @@ add_aktualizr_test(NAME aktualizr
                    PROJECT_WORKING_DIRECTORY
                    ARGS ${PROJECT_BINARY_DIR}/uptane_repos
                    LIBRARIES uptane_generator_lib virtual_secondary)
-
 add_dependencies(t_aktualizr uptane_repo_full_no_correlation_id)
 
 add_aktualizr_test(NAME reregistration
@@ -89,7 +88,6 @@ add_aktualizr_test(NAME target_mismatch
 add_aktualizr_test(NAME metadata_fetch
                    SOURCES metadata_fetch_test.cc
                    PROJECT_WORKING_DIRECTORY
-                   ARGS "$<TARGET_FILE:uptane-generator>"
                    LIBRARIES uptane_generator_lib virtual_secondary)
 
 add_aktualizr_test(NAME metadata_expiration

@@ -26,6 +26,8 @@ Aktualizr::Aktualizr(Config config, std::shared_ptr<INvStorage> storage_in,
   storage_->importData(config_.import);
 
   uptane_client_ = std::make_shared<SotaUptaneClient>(config_, storage_, http_in, sig_);
+
+  updates_disabled_ = false;
 }
 
 Aktualizr::~Aktualizr() { api_queue_.reset(nullptr); }
@@ -35,9 +37,13 @@ void Aktualizr::Initialize() {
   api_queue_->run();
 }
 
+void Aktualizr::DisableUpdates(bool status) {
+  updates_disabled_ = status;
+}
+
 bool Aktualizr::UptaneCycle() {
   result::UpdateCheck update_result = CheckUpdates().get();
-  if (update_result.updates.empty()) {
+  if (update_result.updates.empty() || updates_disabled_) {
     if (update_result.status == result::UpdateStatus::kError) {
       // If the metadata verification failed, inform the backend immediately.
       SendManifest().get();
@@ -72,9 +78,9 @@ bool Aktualizr::UptaneCycle() {
   return true;
 }
 
-std::future<void> Aktualizr::RunForever(const Json::Value &custom_hwinfo) {
-  std::future<void> future = std::async(std::launch::async, [this, custom_hwinfo]() {
-    SendDeviceData(custom_hwinfo).get();
+std::future<void> Aktualizr::RunForever() {
+  std::future<void> future = std::async(std::launch::async, [this]() {
+    SendDeviceData().get();
 
     std::unique_lock<std::mutex> l(exit_cond_.m);
     while (true) {
@@ -139,8 +145,18 @@ std::future<void> Aktualizr::CampaignControl(const std::string &campaign_id, cam
   return api_queue_->enqueue(task);
 }
 
-std::future<void> Aktualizr::SendDeviceData(const Json::Value &custom_hwinfo) {
-  std::function<void()> task([this, custom_hwinfo] { uptane_client_->sendDeviceData(custom_hwinfo); });
+void Aktualizr::SetCustomHardwareInfo(Json::Value hwinfo) { uptane_client_->setCustomHardwareInfo(std::move(hwinfo)); }
+std::future<void> Aktualizr::SendDeviceData() {
+  std::function<void()> task([this] { uptane_client_->sendDeviceData(); });
+  return api_queue_->enqueue(task);
+}
+
+// FIXME: [TDX] This solution must be reviewed (we should probably have a method to be used just for the data proxy).
+std::future<void> Aktualizr::SendDeviceData(const Json::Value &hwinfo) {
+  std::function<void()> task([this, hwinfo] {
+    uptane_client_->setCustomHardwareInfo(std::move(hwinfo));
+    uptane_client_->sendDeviceData();
+  });
   return api_queue_->enqueue(task);
 }
 

@@ -77,13 +77,13 @@ class UptaneRepoWrapper {
  public:
   UptaneRepoWrapper() { uptane_repo_.generateRepo(KeyType::kED25519); }
 
-  Metadata addImageFile(const std::string& targetname, const std::string& hardware_id, const std::string& serial,
-                        size_t size = 2049, bool add_and_sign_target = true, bool add_invalid_images = false,
-                        size_t delta = 2) {
+  Uptane::SecondaryMetadata addImageFile(const std::string& targetname, const std::string& hardware_id,
+                                         const std::string& serial, size_t size = 2049, bool add_and_sign_target = true,
+                                         bool add_invalid_images = false, size_t delta = 2) {
     const auto image_file_path = root_dir_ / targetname;
     generateRandomFile(image_file_path, size);
 
-    uptane_repo_.addImage(image_file_path, targetname, hardware_id, "", Delegation());
+    uptane_repo_.addImage(image_file_path, targetname, hardware_id);
     if (add_and_sign_target) {
       uptane_repo_.addTarget(targetname, hardware_id, serial, "");
       uptane_repo_.signTargets();
@@ -121,7 +121,9 @@ class UptaneRepoWrapper {
     auto custom = Json::Value();
     custom["targetFormat"] = "BINARY";
     custom["version"] = custom_version;
-    uptane_repo_.addCustomImage(targetname, Hash(Hash::Type::kSha256, targetname), 1, hardware_id, "", Delegation(),
+    // Don't use the custom_version since it only allows integers and we want to
+    // be able to put garbage there.
+    uptane_repo_.addCustomImage(targetname, Hash(Hash::Type::kSha256, targetname), 1, hardware_id, "", 0, Delegation(),
                                 custom);
   }
 
@@ -277,15 +279,15 @@ class SecondaryTestNegative
   SecondaryTestNegative() : SecondaryTest(std::get<2>(GetParam())), success_expected_(std::get<3>(GetParam())) {}
 
  protected:
-  class MetadataInvalidator : public Metadata {
+  class MetadataInvalidator : public Uptane::SecondaryMetadata {
    public:
     MetadataInvalidator(const Uptane::MetaBundle& valid_metadata, const Uptane::RepositoryType& repo,
                         const Uptane::Role& role)
-        : Metadata(valid_metadata), repo_type_(repo), role_(role) {}
+        : Uptane::SecondaryMetadata(valid_metadata), repo_type_(repo), role_(role) {}
 
     void getRoleMetadata(std::string* result, const Uptane::RepositoryType& repo, const Uptane::Role& role,
                          Uptane::Version version) const override {
-      Metadata::getRoleMetadata(result, repo, role, version);
+      Uptane::SecondaryMetadata::getRoleMetadata(result, repo, role, version);
       if (!(repo_type_ == repo && role_ == role)) {
         return;
       }
