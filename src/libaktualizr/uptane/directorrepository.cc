@@ -37,7 +37,7 @@ void DirectorRepository::verifyOfflineSnapshot(const std::string& snapshot_raw_n
 
 void DirectorRepository::checkOfflineSnapshotExpired() {
   if (snapshot.isExpired(TimeStamp::Now())) {
-    throw Uptane::ExpiredMetadata(type.toString(), Role::SNAPSHOT);
+    throw Uptane::ExpiredMetadata(type.ToString(), Role::SNAPSHOT);
   }
 }
 

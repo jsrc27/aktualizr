@@ -31,7 +31,7 @@ void IMetadataFetcher::fetchRoleFilename(std::string* result, std::string file_p
 void IMetadataFetcher::fetchFile(std::string file, RepositoryType repo, std::string* result) const {
   std::ifstream file_input(file);
   if (!file_input.is_open()) {
-    throw Uptane::MetadataFetchFailure(repo.toString(), file);
+    throw Uptane::MetadataFetchFailure(repo.ToString(), file);
   }
 
   auto ss = std::ostringstream{};
