@@ -210,6 +210,8 @@ void ImageRepository::updateMeta(INvStorage& storage, const IMetadataFetcher& fe
 
   updateRoot(storage, fetcher, RepositoryType::Image(), offline, image_offline_metadata);
 
+  LOG_INFO << "OU: Step 6 Done";
+
   // Update Image repo Timestamp metadata
   if (!offline) {
     std::string image_timestamp;
@@ -259,6 +261,8 @@ void ImageRepository::updateMeta(INvStorage& storage, const IMetadataFetcher& fe
     } else {
       verifySnapshot(image_snapshot_stored, false, offline);
     }
+
+    LOG_INFO << "OU: Step 7 Done";
   } else {
     // First check if we already have the latest version according to the
     // Timestamp metadata.
@@ -311,6 +315,8 @@ void ImageRepository::updateMeta(INvStorage& storage, const IMetadataFetcher& fe
     }
 
     checkTargetsExpired();
+
+    LOG_INFO << "OU: Step 8 Done";
   } else {
     // First check if we already have the latest version according to the
     // Snapshot metadata.

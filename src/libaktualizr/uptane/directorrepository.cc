@@ -79,7 +79,7 @@ void DirectorRepository::verifyTargets(const std::string& targets_raw, bool offl
     // Verify the signature:
     std::shared_ptr<Uptane::Targets> targets_offline_ptr;
     if (offline) {
-      latest_targets = Targets(RepositoryType::Director(), Role::OfflineTargets(), Utils::parseJSON(targets_raw),
+      latest_targets = Targets(RepositoryType::Director(), Role::OfflineUpdates(), Utils::parseJSON(targets_raw),
                                std::make_shared<MetaWithKeys>(root));
       targets_offline_ptr = std::make_shared<Uptane::Targets>(latest_targets);
     } else {
@@ -89,8 +89,8 @@ void DirectorRepository::verifyTargets(const std::string& targets_raw, bool offl
     if (!usePreviousTargets()) {
       targets = latest_targets;
     }
-    if (targets_offline_ptr->version() != snapshot.role_version(Uptane::Role::OfflineTargets()) && offline) {
-      throw Uptane::VersionMismatch(RepositoryType::DIRECTOR, Uptane::Role::OFFLINETARGETS);
+    if (targets_offline_ptr->version() != snapshot.role_version(Uptane::Role::OfflineUpdates()) && offline) {
+      throw Uptane::VersionMismatch(RepositoryType::DIRECTOR, Uptane::Role::OFFLINEUPDATES);
     }
   } catch (const Uptane::Exception& e) {
     LOG_ERROR << "Signature verification for Director Targets metadata failed";
@@ -139,6 +139,8 @@ void DirectorRepository::updateMeta(INvStorage& storage, const IMetadataFetcher&
 
   updateRoot(storage, fetcher, RepositoryType::Director(), offline, director_offline_metadata);
 
+  LOG_INFO << "OU: Step 2 Done";
+
   // Not supported: 3. Download and check the Timestamp metadata file from the Director repository, following the
   // procedure in Section 5.4.4.4. Not supported: 4. Download and check the Snapshot metadata file from the Director
   // repository, following the procedure in Section 5.4.4.5.
@@ -168,6 +170,8 @@ void DirectorRepository::updateMeta(INvStorage& storage, const IMetadataFetcher&
     }
 
     checkOfflineSnapshotExpired();
+
+    LOG_INFO << "OU: Step 3 Done";
   }
 
   // Update Director Targets/Offline Targets Metadata
@@ -191,11 +195,13 @@ void DirectorRepository::updateMeta(INvStorage& storage, const IMetadataFetcher&
     std::string offline_targets;
     fetcher.fetchRoleFilename(&offline_targets, target_file, RepositoryType::Director());
     verifyTargets(offline_targets, offline);
-    storage.storeNonRoot(offline_targets, RepositoryType::Director(), Role::OfflineTargets());
+    storage.storeNonRoot(offline_targets, RepositoryType::Director(), Role::OfflineUpdates());
 
     checkTargetsExpired();
 
     targetsSanityCheck();
+
+    LOG_INFO << "OU: Step 4 Done";
   } else {
     std::string director_targets;
 

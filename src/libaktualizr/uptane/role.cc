@@ -10,7 +10,7 @@ const std::string Role::SNAPSHOT = "snapshot";
 const std::string Role::TARGETS = "targets";
 const std::string Role::TIMESTAMP = "timestamp";
 const std::string Role::OFFLINESNAPSHOT = "offlinesnapshot";
-const std::string Role::OFFLINETARGETS = "offlinetargets";
+const std::string Role::OFFLINEUPDATES = "offlineupdates";
 
 Role::Role(const std::string &role_name, const bool delegation) {
   std::string role_name_lower;
@@ -32,8 +32,8 @@ Role::Role(const std::string &role_name, const bool delegation) {
     role_ = RoleEnum::kTimestamp;
   } else if (role_name_lower == OFFLINESNAPSHOT) {
     role_ = RoleEnum::kOfflineSnapshot;
-  } else if (role_name_lower ==  OFFLINETARGETS) {
-    role_ = RoleEnum::kOfflineTargets;
+  } else if (role_name_lower ==  OFFLINEUPDATES) {
+    role_ = RoleEnum::kOfflineUpdates;
   } else {
     role_ = RoleEnum::kInvalidRole;
     name_ = "invalidrole";

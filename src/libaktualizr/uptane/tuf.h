@@ -69,7 +69,7 @@ class Role {
   static const std::string TARGETS;
   static const std::string TIMESTAMP;
   static const std::string OFFLINESNAPSHOT;
-  static const std::string OFFLINETARGETS;
+  static const std::string OFFLINEUPDATES;
 
   static Role Root() { return Role{RoleEnum::kRoot}; }
   static Role Snapshot() { return Role{RoleEnum::kSnapshot}; }
@@ -78,12 +78,12 @@ class Role {
   static Role Delegation(const std::string &name) { return Role(name, true); }
   static Role InvalidRole() { return Role{RoleEnum::kInvalidRole}; }
   static Role OfflineSnapshot() { return Role{RoleEnum::kOfflineSnapshot}; }
-  static Role OfflineTargets() { return Role(RoleEnum::kOfflineTargets); }
+  static Role OfflineUpdates() { return Role{RoleEnum::kOfflineUpdates}; }
   // Delegation is not included because this is only used for a metadata table
   // that doesn't include delegations.
-  static std::vector<Role> Roles() { return {Root(), Snapshot(), Targets(), Timestamp(), OfflineSnapshot(), OfflineTargets()}; }
+  static std::vector<Role> Roles() { return {Root(), Snapshot(), Targets(), Timestamp(), OfflineSnapshot(), OfflineUpdates()}; }
   static bool IsReserved(const std::string &name) {
-    return (name == ROOT || name == TARGETS || name == SNAPSHOT || name == TIMESTAMP || name == OFFLINESNAPSHOT || name == OFFLINETARGETS);
+    return (name == ROOT || name == TARGETS || name == SNAPSHOT || name == TIMESTAMP || name == OFFLINESNAPSHOT || name == OFFLINEUPDATES);
   }
 
   explicit Role(const std::string &role_name, bool delegation = false);
@@ -99,7 +99,7 @@ class Role {
  private:
   /** The four standard roles must match the meta_types table in sqlstorage.
    *  Delegations are special and handled differently. */
-  enum class RoleEnum { kRoot = 0, kSnapshot = 1, kTargets = 2, kTimestamp = 3, kDelegation = 4, kOfflineSnapshot = 5, kOfflineTargets= 6, kInvalidRole = -1 };
+  enum class RoleEnum { kRoot = 0, kSnapshot = 1, kTargets = 2, kTimestamp = 3, kDelegation = 4, kOfflineSnapshot = 5, kOfflineUpdates= 6, kInvalidRole = -1 };
 
   explicit Role(RoleEnum role) : role_(role) {
     if (role_ == RoleEnum::kRoot) {
@@ -112,8 +112,8 @@ class Role {
       name_ = TIMESTAMP;
     } else if (role == RoleEnum::kOfflineSnapshot) {
       name_ = OFFLINESNAPSHOT;
-    } else if (role ==  RoleEnum::kOfflineTargets) {
-      name_ = OFFLINETARGETS;
+    } else if (role ==  RoleEnum::kOfflineUpdates) {
+      name_ = OFFLINEUPDATES;
     } else {
       role_ = RoleEnum::kInvalidRole;
       name_ = "invalidrole";
