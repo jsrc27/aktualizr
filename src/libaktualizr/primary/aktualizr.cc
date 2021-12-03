@@ -51,6 +51,9 @@ bool Aktualizr::UptaneCycle() {
     return true;
   }
 
+  LOG_INFO << "Offline Metadata Verification Success!";
+  return false;
+
   result::Download download_result = Download(update_result.updates).get();
   if (download_result.status != result::DownloadStatus::kSuccess || download_result.updates.empty()) {
     if (download_result.status != result::DownloadStatus::kNothingToDownload) {
