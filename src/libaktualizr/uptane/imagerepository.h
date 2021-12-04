@@ -33,7 +33,7 @@ class ImageRepository : public RepositoryCommon {
   void checkMetaOffline(INvStorage& storage);
   void updateMeta(INvStorage& storage, const IMetadataFetcher& fetcher, bool offline) override;
 
-  std::string image_offline_metadata = "/media/well-known/metadata/image";
+  std::string image_offline_metadata = "/media/well-known/update/metadata/image-repo";
 
  private:
   void checkTimestampExpired();

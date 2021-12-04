@@ -50,7 +50,7 @@ void ImageRepository::fetchSnapshot(INvStorage& storage, const IMetadataFetcher&
 }
 
 void ImageRepository::verifySnapshot(const std::string& snapshot_raw, bool prefetch, bool offline) {
-  if (offline) {
+  if (!offline) {
     const std::string canonical = Utils::jsonToCanonicalStr(Utils::parseJSON(snapshot_raw));
     bool hash_exists = false;
     for (const auto& it : timestamp.snapshot_hashes()) {

@@ -29,7 +29,7 @@ class DirectorRepository : public RepositoryCommon {
 
   void verifyOfflineSnapshot(const std::string& snapshot_raw_new, const std::string& snapshot_raw_old);
 
-  std::string director_offline_metadata = "/media/well-known/metadata/director";
+  std::string director_offline_metadata = "/media/well-known/update/metadata/director";
 
  private:
   void resetMeta();
