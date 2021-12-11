@@ -9,8 +9,8 @@ const std::string Role::ROOT = "root";
 const std::string Role::SNAPSHOT = "snapshot";
 const std::string Role::TARGETS = "targets";
 const std::string Role::TIMESTAMP = "timestamp";
-const std::string Role::OFFLINESNAPSHOT = "offlinesnapshot";
-const std::string Role::OFFLINEUPDATES = "offlineupdates";
+const std::string Role::OFFLINESNAPSHOT = "offline-snapshot";
+const std::string Role::OFFLINEUPDATES = "offline-updates";
 
 Role::Role(const std::string &role_name, const bool delegation) {
   std::string role_name_lower;

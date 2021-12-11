@@ -1,7 +1,6 @@
 #include "logging/logging.h"
 #include "uptane/exceptions.h"
 #include "uptane/tuf.h"
-#include <boost/algorithm/string.hpp>
 
 using Uptane::MetaWithKeys;
 
@@ -60,9 +59,7 @@ void Uptane::MetaWithKeys::UnpackSignedObject(const RepositoryType repo, const R
                                               const Json::Value &signed_object) {
   const std::string repository = repo;
 
-  std::string roleType = signed_object["signed"]["_type"].asString();
-  boost::erase_all(roleType, "-");
-  const Uptane::Role type(roleType);
+  const Uptane::Role type(signed_object["signed"]["_type"].asString());
   if (role.IsDelegation()) {
     if (type != Uptane::Role::Targets()) {
       LOG_ERROR << "Delegated role " << role << " has an invalid type: " << type;
