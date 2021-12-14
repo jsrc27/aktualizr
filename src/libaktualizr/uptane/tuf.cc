@@ -318,7 +318,7 @@ Uptane::BaseMeta::BaseMeta(RepositoryType repo, const Role &role, const Json::Va
 }
 
 void Uptane::Targets::init(const Json::Value &json) {
-  if (!json.isObject() || json["signed"]["_type"] != "Targets" || json["signed"]["_type"] != "Offline-Updates") {
+  if (!json.isObject() || (json["signed"]["_type"] != "Targets" && json["signed"]["_type"] != "Offline-Updates")) {
     throw Uptane::InvalidMetadata("", "targets", "invalid targets.json");
   }
 
@@ -392,7 +392,7 @@ Uptane::TimestampMeta::TimestampMeta(RepositoryType repo, const Json::Value &jso
 
 void Uptane::Snapshot::init(const Json::Value &json) {
   Json::Value meta_list = json["signed"]["meta"];
-  if (!json.isObject() || json["signed"]["_type"] != "Snapshot" || json["signed"]["_type"] != "Offline-Snapshot"  || !meta_list.isObject()) {
+  if ((!json.isObject() || !meta_list.isObject()) || (json["signed"]["_type"] != "Snapshot" && json["signed"]["_type"] != "Offline-Snapshot")) {
     throw Uptane::InvalidMetadata("", "snapshot", "invalid snapshot.json");
   }
 

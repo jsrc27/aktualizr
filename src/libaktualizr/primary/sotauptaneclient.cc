@@ -855,8 +855,10 @@ result::UpdateCheck SotaUptaneClient::fetchMeta() {
   }
 
   // Uptane step 1 (build the vehicle version manifest):
-  if (!putManifestSimple() && !config.uptane.offline_updates) {
-    LOG_ERROR << "Error sending manifest!";
+  if (!config.uptane.offline_updates) {
+    if (!putManifestSimple()) {
+      LOG_ERROR << "Error sending manifest!";
+    }
   }
   result = checkUpdates();
   sendEvent<event::UpdateCheckComplete>(result);
