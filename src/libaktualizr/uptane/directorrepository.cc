@@ -20,15 +20,19 @@ void DirectorRepository::verifyOfflineSnapshot(const std::string& snapshot_raw_n
     throw;
   }
 
+  LOG_INFO << "YOU GOT HERE!!!!";
+
   Json::Value target_list_new = Utils::parseJSON(snapshot_raw_new)["signed"]["meta"];
   Json::Value target_list_old = Utils::parseJSON(snapshot_raw_old)["signed"]["meta"];
-  for (auto next = target_list_new.begin(); next != target_list_new.end(); ++next) {
-    Json::Value target_new = next.key();
-    for (auto old = target_list_old.begin(); old != target_list_new.end(); ++old) {
-      Json::Value target_old = old.key();
-      if (target_new.asString() == target_old.asString()) {
-        if (target_old["version"].asInt() > target_new["version"].asInt()) {
-          throw Uptane::SecurityException(RepositoryType::DIRECTOR, "Rollback attempt");
+  if (target_list_old.isObject()) {
+    for (auto next = target_list_new.begin(); next != target_list_new.end(); ++next) {
+      Json::Value target_new = next.key();
+      for (auto old = target_list_old.begin(); old != target_list_new.end(); ++old) {
+        Json::Value target_old = old.key();
+        if (target_new.asString() == target_old.asString()) {
+          if (target_old["version"].asInt() > target_new["version"].asInt()) {
+            throw Uptane::SecurityException(RepositoryType::DIRECTOR, "Rollback attempt");
+          }
         }
       }
     }
