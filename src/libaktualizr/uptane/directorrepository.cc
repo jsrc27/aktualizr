@@ -20,8 +20,6 @@ void DirectorRepository::verifyOfflineSnapshot(const std::string& snapshot_raw_n
     throw;
   }
 
-  LOG_INFO << "YOU GOT HERE!!!!";
-
   Json::Value target_list_new = Utils::parseJSON(snapshot_raw_new)["signed"]["meta"];
   Json::Value target_list_old = Utils::parseJSON(snapshot_raw_old)["signed"]["meta"];
   if (target_list_old.isObject()) {
@@ -186,9 +184,10 @@ void DirectorRepository::updateMeta(INvStorage& storage, const IMetadataFetcher&
     Json::Value targets_list = Utils::parseJSON(offline_snapshot)["signed"]["meta"];
     std::string target_file;
     for (auto target = targets_list.begin(); target != targets_list.end(); ++target) {
-      std::string filename = target.key().asString();
-      if (access(filename.c_str(), R_OK) == 0) {
-        target_file = director_offline_metadata + filename;
+      target_file = director_offline_metadata + "/" + target.key().asString();;
+      if (access(target_file.c_str(), R_OK) == 0) {
+        LOG_INFO << "Found offline updates metadata file: " << target_file;
+        break;
       }
     }
 
