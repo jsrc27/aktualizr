@@ -79,20 +79,15 @@ bool DirectorRepository::usePreviousTargets() const {
 void DirectorRepository::verifyTargets(const std::string& targets_raw, bool offline) {
   try {
     // Verify the signature:
-    std::shared_ptr<Uptane::Targets> targets_offline_ptr;
     if (offline) {
       latest_targets = Targets(RepositoryType::Director(), Role::OfflineUpdates(), Utils::parseJSON(targets_raw),
                                std::make_shared<MetaWithKeys>(root));
-      targets_offline_ptr = std::make_shared<Uptane::Targets>(latest_targets);
     } else {
       latest_targets = Targets(RepositoryType::Director(), Role::Targets(), Utils::parseJSON(targets_raw),
                                std::make_shared<MetaWithKeys>(root));
     }
     if (!usePreviousTargets()) {
       targets = latest_targets;
-    }
-    if (targets_offline_ptr->version() != snapshot.role_version(Uptane::Role::OfflineUpdates()) && offline) {
-      throw Uptane::VersionMismatch(RepositoryType::DIRECTOR, Uptane::Role::OFFLINEUPDATES);
     }
   } catch (const Uptane::Exception& e) {
     LOG_ERROR << "Signature verification for Director Targets metadata failed";
@@ -183,10 +178,13 @@ void DirectorRepository::updateMeta(INvStorage& storage, const IMetadataFetcher&
     storage.loadNonRoot(&offline_snapshot, RepositoryType::Director(), Role::OfflineSnapshot());
     Json::Value targets_list = Utils::parseJSON(offline_snapshot)["signed"]["meta"];
     std::string target_file;
+    int snapshot_version;
     for (auto target = targets_list.begin(); target != targets_list.end(); ++target) {
-      target_file = director_offline_metadata + "/" + target.key().asString();;
+      std::string target_name = target.key().asString();
+      target_file = director_offline_metadata + "/" + target_name;
       if (access(target_file.c_str(), R_OK) == 0) {
         LOG_INFO << "Found offline updates metadata file: " << target_file;
+        snapshot_version = targets_list[target_name]["version"].asInt();
         break;
       }
     }
@@ -197,6 +195,13 @@ void DirectorRepository::updateMeta(INvStorage& storage, const IMetadataFetcher&
 
     std::string offline_targets;
     fetcher.fetchRoleFilename(&offline_targets, target_file, RepositoryType::Director());
+
+    int offline_targets_version = Utils::parseJSON(offline_targets)["signed"]["version"].asInt();
+    if (offline_targets_version != snapshot_version) {
+      LOG_INFO << "Offline targets: " << offline_targets_version;
+      LOG_INFO << "Offline snapshot: " << snapshot_version;
+      throw Uptane::VersionMismatch(RepositoryType::DIRECTOR, Uptane::Role::OFFLINEUPDATES);
+    }
     verifyTargets(offline_targets, offline);
     storage.storeNonRoot(offline_targets, RepositoryType::Director(), Role::OfflineUpdates());
 
