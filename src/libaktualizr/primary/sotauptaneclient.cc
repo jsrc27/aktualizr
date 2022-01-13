@@ -517,12 +517,35 @@ void SotaUptaneClient::computeDeviceInstallationResult(data::InstallationResult 
 }
 
 void SotaUptaneClient::getNewTargets(std::vector<Uptane::Target> *new_targets, unsigned int *ecus_count) {
-  const std::vector<Uptane::Target> targets = director_repo.getTargets().targets;
+  std::vector<Uptane::Target> targets = director_repo.getTargets().targets;
   const Uptane::EcuSerial primary_ecu_serial = primaryEcuSerial();
   if (ecus_count != nullptr) {
     *ecus_count = 0;
   }
-  for (const Uptane::Target &target : targets) {
+
+  if (config.uptane.offline_updates) {
+    EcuSerials serials;
+    if (!storage->loadEcuSerials(&serials) || serials.empty()) {
+      throw std::runtime_error("Unable to load ECU serials");
+    }
+    int count =  sizeof(serials);
+
+    for (Uptane::Target &target : targets) {
+      std::vector<Uptane::HardwareIdentifier> hwids = target.hardwareIds();
+      for (Uptane::HardwareIdentifier &hwid : hwids) {
+        for (int i = 0; i < count; i++) {
+          Uptane::EcuSerial serial = serials[i].first;
+          boost::optional<Uptane::HardwareIdentifier> hw_id = getEcuHwId(serial);
+          if (hwid == hw_id) {
+            std::pair<Uptane::EcuSerial, Uptane::HardwareIdentifier> ecuPair(serial, hwid);
+            target.InsertEcu(ecuPair);
+          }
+        }
+      }
+    }
+  }
+
+  for (Uptane::Target &target : targets) {
     bool is_new = false;
     for (const auto &ecu : target.ecus()) {
       const Uptane::EcuSerial ecu_serial = ecu.first;
