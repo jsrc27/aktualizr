@@ -539,6 +539,7 @@ void SotaUptaneClient::getNewTargets(std::vector<Uptane::Target> *new_targets, u
           if (hwid == hw_id) {
             std::pair<Uptane::EcuSerial, Uptane::HardwareIdentifier> ecuPair(serial, hwid);
             target.InsertEcu(ecuPair);
+            LOG_INFO << serial << " and " << hwid; 
           }
         }
       }
