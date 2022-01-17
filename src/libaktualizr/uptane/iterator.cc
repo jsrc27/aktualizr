@@ -9,7 +9,7 @@ Targets getTrustedDelegation(const Role &delegate_role, const Targets &parent_ta
                              const bool offline, const bool offline_update) {
   std::string delegation_meta;
   auto version_in_snapshot = image_repo.getRoleVersion(delegate_role);
-  std::string delegation_offline_metadata = "/media/well-known/metadata/image";
+  std::string delegation_offline_metadata = "/media/well-known/update/metadata/image-repo";
 
   if (storage.loadDelegation(&delegation_meta, delegate_role)) {
     auto version = extractVersionUntrusted(delegation_meta);
