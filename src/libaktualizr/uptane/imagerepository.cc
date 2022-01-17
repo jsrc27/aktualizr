@@ -90,11 +90,7 @@ void ImageRepository::verifySnapshot(const std::string& snapshot_raw, bool prefe
 
   try {
     // Verify the signature:
-    if (offline) {
-      snapshot = Snapshot(RepositoryType::Image(), Uptane::Role::OfflineSnapshot(), Utils::parseJSON(snapshot_raw), std::make_shared<MetaWithKeys>(root));
-    } else {
-      snapshot = Snapshot(RepositoryType::Image(), Uptane::Role::Snapshot(), Utils::parseJSON(snapshot_raw), std::make_shared<MetaWithKeys>(root));
-    }
+    snapshot = Snapshot(RepositoryType::Image(), Uptane::Role::Snapshot(), Utils::parseJSON(snapshot_raw), std::make_shared<MetaWithKeys>(root));
   } catch (const Exception& e) {
     LOG_ERROR << "Signature verification for Snapshot metadata failed";
     throw;

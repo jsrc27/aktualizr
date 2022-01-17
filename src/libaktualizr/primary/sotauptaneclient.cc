@@ -531,32 +531,24 @@ void SotaUptaneClient::getNewTargets(std::vector<Uptane::Target> *new_targets, u
 
     for (Uptane::Target &target : targets) {
       std::vector<Uptane::HardwareIdentifier> hwids = target.hardwareIds();
-      LOG_INFO << "A: " << target.filename();
       for (Uptane::HardwareIdentifier &hwid : hwids) {
-        LOG_INFO << "B: " << hwid;
         for (const auto &s : serials) {
           Uptane::EcuSerial serialNum = s.first;
           Uptane::HardwareIdentifier hw_id = s.second;
-          LOG_INFO << "C: " << serialNum << " and " << hw_id;
           if (hwid == hw_id) {
             std::pair<Uptane::EcuSerial, Uptane::HardwareIdentifier> ecuPair(serialNum, hw_id);
             target.InsertEcu(ecuPair);
-            LOG_INFO << "D: " << serialNum << " and " << hw_id;
           }
         }
       }
     }
   }
 
-  LOG_INFO << "Mapping done";
-
   for (Uptane::Target &target : targets) {
     bool is_new = false;
     for (const auto &ecu : target.ecus()) {
       const Uptane::EcuSerial ecu_serial = ecu.first;
       const Uptane::HardwareIdentifier hw_id = ecu.second;
-
-      LOG_INFO << "E: " << ecu_serial << " and " << hw_id;
 
       // 5.4.4.6.8. If checking Targets metadata from the Director repository,
       // and the ECU performing the verification is the Primary ECU, check that
@@ -819,6 +811,8 @@ void SotaUptaneClient::uptaneIteration(std::vector<Uptane::Target> *targets, uns
     throw;
   }
 
+  LOG_INFO << "OU: Step 5 Done";
+
   if (!tmp_targets.empty()) {
     LOG_INFO << "New updates found in Director metadata. Checking Image repo metadata...";
     updateImageMeta();
@@ -891,6 +885,9 @@ result::UpdateCheck SotaUptaneClient::fetchMeta() {
     }
   }
   result = checkUpdates();
+
+  LOG_INFO << "OU: Step 9 Done";
+
   sendEvent<event::UpdateCheckComplete>(result);
 
   return result;
