@@ -213,10 +213,10 @@ bool Target::MatchTarget(const Target &t2) const {
   if (hwids_ != t2.hwids_ || ecus_ != t2.ecus_) {
     std::shared_ptr<EcuMap> ecu_map;                               // Director
     std::shared_ptr<std::vector<HardwareIdentifier>> hwid_vector;  // Image repo
-    if (!hwids_.empty() && ecus_.empty() && t2.hwids_.empty() && !t2.ecus_.empty()) {
+    if (ecus_.empty() && !t2.ecus_.empty()) {
       ecu_map = std::make_shared<EcuMap>(t2.ecus_);
       hwid_vector = std::make_shared<std::vector<HardwareIdentifier>>(hwids_);
-    } else if (!t2.hwids_.empty() && t2.ecus_.empty() && hwids_.empty() && !ecus_.empty()) {
+    } else if (t2.ecus_.empty() && !ecus_.empty()) {
       ecu_map = std::make_shared<EcuMap>(ecus_);
       hwid_vector = std::make_shared<std::vector<HardwareIdentifier>>(t2.hwids_);
     } else {
